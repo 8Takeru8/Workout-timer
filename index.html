@@ -73,14 +73,17 @@
         }
 
         button {
-            padding: 10px 20px;
-            font-size: 1.2rem;
+            padding: 12px 24px;
+            font-size: 1.1rem;
             cursor: pointer;
             background-color: var(--button-bg);
             color: white;
             border: none;
             border-radius: 5px;
             margin: 5px;
+            min-width: 120px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
 
         button:hover {
@@ -96,6 +99,10 @@
         #controls {
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 90%;
+            max-width: 400px;
         }
 
         button[aria-pressed="true"] {
@@ -121,6 +128,24 @@
         .duration-input span {
             color: var(--text-color);
             font-size: 0.9rem;
+        }
+
+        @media (max-width: 480px) {
+            #controls {
+                flex-direction: column;
+                width: 100%;
+                gap: 8px;
+            }
+
+            button {
+                width: 100%;
+                padding: 16px 24px;
+                margin: 0;
+            }
+
+            #timer {
+                font-size: 4rem;
+            }
         }
     </style>
 </head>
