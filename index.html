@@ -40,6 +40,12 @@
             font-size: 6rem;
             font-weight: bold;
             margin: 20px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        #timer:hover {
+            opacity: 0.8;
         }
 
         .settings-panel {
@@ -164,18 +170,68 @@
                 font-size: 4rem;
             }
         }
+
+        .time-input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .time-inputs {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .time-input-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .time-input-group input {
+            width: 70px;
+            text-align: center;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .time-separator {
+            font-size: 1.5em;
+            margin: 0 5px;
+        }
+
+        /* Make inputs look consistent across browsers */
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
     </style>
 </head>
 <body data-theme="dark">
     <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
     
     <div class="settings-panel">
-        <div>
-            <label>Duration: </label>
-            <input type="number" id="durationMinutes" min="0" max="60" value="2">
-            <span>minutes</span>
-            <input type="number" id="durationSeconds" min="0" max="59" value="0">
-            <span>seconds</span>
+        <div class="time-input-container">
+            <label>Duration</label>
+            <div class="time-inputs">
+                <div class="time-input-group">
+                    <input type="number" id="durationMinutes" min="0" max="999" value="2" oninput="validateTime(this)" maxlength="3">
+                    <span>min</span>
+                </div>
+                <span class="time-separator">:</span>
+                <div class="time-input-group">
+                    <input type="number" id="durationSeconds" min="0" max="59" value="0" oninput="validateTime(this)" maxlength="2">
+                    <span>sec</span>
+                </div>
+            </div>
         </div>
 
         <div>
@@ -412,15 +468,55 @@
             const voiceSelect = document.getElementById('voiceSelect');
             const voices = speechSynthesis.getVoices();
             
-            if (voices.length > 0) {
-                voiceSelect.innerHTML = voices
-                    .map(voice => `<option value="${voice.name}">${voice.name}</option>`)
-                    .join('');
+            // Filter for high-quality English voices
+            const englishVoices = voices.filter(voice => 
+                voice.lang.startsWith('en-') && 
+                !voice.name.includes('Google')
+            );
+            
+            // Try to find one male and one female voice
+            const maleVoice = englishVoices.find(voice => 
+                voice.name.toLowerCase().includes('male') || 
+                voice.name.includes('Daniel') || 
+                voice.name.includes('David')
+            );
+            
+            const femaleVoice = englishVoices.find(voice => 
+                voice.name.toLowerCase().includes('female') || 
+                voice.name.includes('Samantha') || 
+                voice.name.includes('Victoria')
+            );
+            
+            // Clear existing options
+            voiceSelect.innerHTML = '';
+            
+            // Add filtered voices
+            if (maleVoice) {
+                const option = new Option('Male', maleVoice.name);
+                voiceSelect.add(option);
+            }
+            
+            if (femaleVoice) {
+                const option = new Option('Female', femaleVoice.name);
+                voiceSelect.add(option);
+            }
+            
+            // If no voices found, add a default option
+            if (voiceSelect.options.length === 0) {
+                voiceSelect.add(new Option('Default Voice', ''));
+            }
+            
+            // Select the first available voice
+            if (voiceSelect.options.length > 0) {
+                voiceSelect.selectedIndex = 0;
             }
         }
 
-        // Initialize voice list
+        // Initialize voice list when voices are loaded
         speechSynthesis.onvoiceschanged = populateVoiceList;
+
+        // Try initial population as well (for some browsers)
+        populateVoiceList();
 
         // Update the speak function to use selected voice
         function speak(text) {
@@ -450,6 +546,41 @@
 
         document.getElementById('durationMinutes').addEventListener('change', updateTimerFromInputs);
         document.getElementById('durationSeconds').addEventListener('change', updateTimerFromInputs);
+
+        // Add this event listener to the timer div
+        document.getElementById('timer').addEventListener('click', function() {
+            if (countdown) {  // Only toggle if timer is running
+                if (isPaused) {
+                    isPaused = false;
+                    speak("Timer resumed");
+                } else {
+                    isPaused = true;
+                    speak("Timer paused");
+                }
+            }
+        });
+
+        function validateTime(input) {
+            let value = parseInt(input.value) || 0;
+            
+            if (input.id === 'durationSeconds') {
+                if (value > 59) {
+                    input.value = 59;
+                } else if (value < 0) {
+                    input.value = 0;
+                }
+            } else if (input.id === 'durationMinutes') {
+                if (value > 999) {
+                    input.value = 999;
+                } else if (value < 0) {
+                    input.value = 0;
+                }
+            }
+            
+            // Ensure the input value is updated
+            input.value = parseInt(input.value) || 0;
+            updateTimerFromInputs();
+        }
     </script>
 </body>
 </html> 
